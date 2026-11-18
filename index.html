@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1e293b">
+    <title>Vokabeltrainer</title>
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --cat1: #ef4444;
+            --cat2: #f97316;
+            --cat3: #eab308;
+            --cat4: #22c55e;
+        }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); margin: 0; padding: 16px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 440px; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        h1 { font-size: 20px; margin: 0; }
+        .sync-status { font-size: 12px; color: var(--muted); background: #e2e8f0; padding: 4px 10px; border-radius: 12px; }
+        
+        .controls-top { display: flex; gap: 8px; margin-bottom: 16px; }
+        button { border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
+        button:active { transform: scale(0.98); }
+        .btn-dir { flex: 1; background: #1e293b; color: white; padding: 12px; }
+        .btn-reload { background: #cbd5e1; color: var(--text); padding: 12px 14px; }
+
+        .card { background: var(--card); border-radius: 16px; padding: 24px; min-height: 220px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); display: flex; flex-direction: column; justify-content: space-between; align-items: center; text-align: center; cursor: pointer; border-top: 8px solid var(--cat1); position: relative; }
+        .cat-badge { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; color: white; align-self: flex-start; }
+        .word-main { font-size: 28px; font-weight: 700; margin: 20px 0; word-break: break-word; }
+        .word-sub { font-size: 22px; color: #334155; border-top: 1px solid #e2e8f0; padding-top: 16px; width: 100%; margin-top: 8px; }
+        .hint { font-size: 12px; color: var(--muted); }
+
+        .answer-buttons { display: flex; gap: 12px; margin-top: 16px; }
+        .btn-wrong { flex: 1; background: #fee2e2; color: #b91c1c; padding: 16px; font-size: 16px; border: 2px solid #fca5a5; }
+        .btn-right { flex: 1; background: #dcfce7; color: #15803d; padding: 16px; font-size: 16px; border: 2px solid #86efac; }
+        .hidden { display: none !important; }
+
+        .stats-box { background: var(--card); border-radius: 12px; padding: 16px; margin-top: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; margin-top: 10px; }
+        .stat-item { padding: 8px 4px; border-radius: 8px; color: white; font-weight: 700; font-size: 14px; }
+        .stat-label { font-size: 11px; font-weight: 400; display: block; opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Vokabeltrainer</h1>
+            <span id="syncStatus" class="sync-status">Lade Daten...</span>
+        </header>
+
+        <div class="controls-top">
+            <button class="btn-dir" onclick="toggleDirection()">Richtung: <span id="dirLabel">Spanisch → Deutsch</span></button>
+            <button class="btn-reload" onclick="loadVocab()" title="Tabelle neu laden">↻</button>
+        </div>
+
+        <div id="flashcard" class="card" onclick="revealAnswer()">
+            <span id="catBadge" class="cat-badge" style="background: var(--cat1);">Kategorie 1</span>
+            <div class="word-main" id="questionText">Lade Vokabeln...</div>
+            <div class="word-sub hidden" id="answerText"></div>
+            <div class="hint" id="tapHint">Antippen zum Aufdecken</div>
+        </div>
+
+        <div id="actionButtons" class="answer-buttons hidden">
+            <button class="btn-wrong" onclick="submitResult(false)">✕ Falsch</button>
+            <button class="btn-right" onclick="submitResult(true)">✓ Richtig</button>
+        </div>
+
+        <div class="stats-box">
+            <div style="font-size: 13px; color: var(--muted); display: flex; justify-content: space-between;">
+                <span>Lernstand</span>
+                <span id="totalCount">0 Vokabeln</span>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item" style="background: var(--cat1);"><span id="c1">0</span><span class="stat-label">Rot</span></div>
+                <div class="stat-item" style="background: var(--cat2);"><span id="c2">0</span><span class="stat-label">Orange</span></div>
+                <div class="stat-item" style="background: var(--cat3);"><span id="c3">0</span><span class="stat-label">Gelb</span></div>
+                <div class="stat-item" style="background: var(--cat4);"><span id="c4">0</span><span class="stat-label">Grün</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // HIER DEINE WEB-APP-URL AUS GOOGLE APPS SCRIPT EINFÜGEN:
+        const API_URL = "https://script.google.com/macros/s/AKfycbyBBBayN47em1xvrqQ2nJ70xf2hQXYt_Qlz4cDeQr_Q6UW5Qk33i3joiQfYYF51JNcJ/exec";
+
+        let vocab = [];
+        let currentWord = null;
+        let esToDe = true;
+        let isRevealed = false;
+
+        const catMeta = {
+            1: { name: "Kategorie 1 (Rot)", color: "#ef4444", weight: 8 },
+            2: { name: "Kategorie 2 (Orange)", color: "#f97316", weight: 4 },
+            3: { name: "Kategorie 3 (Gelb)", color: "#eab308", weight: 2 },
+            4: { name: "Kategorie 4 (Grün)", color: "#22c55e", weight: 1 }
+        };
+
+        async function loadVocab() {
+            setStatus("Lade Tabelle...");
+            try {
+                const response = await fetch(API_URL);
+                vocab = await response.json();
+                setStatus("Synchronisiert ✓");
+                updateStats();
+                pickNextWord();
+            } catch (err) {
+                setStatus("Verbindungsfehler!");
+                document.getElementById("questionText").innerText = "Fehler beim Laden der Google-Tabelle.";
+            }
+        }
+
+        function setStatus(text) {
+            document.getElementById("syncStatus").innerText = text;
+        }
+
+        function toggleDirection() {
+            esToDe = !esToDe;
+            document.getElementById("dirLabel").innerText = esToDe ? "Spanisch → Deutsch" : "Deutsch → Spanisch";
+            if (currentWord) renderCard();
+        }
+
+        function pickNextWord() {
+            if (vocab.length === 0) {
+                document.getElementById("questionText").innerText = "Keine Vokabeln gefunden.";
+                return;
+            }
+
+            // Verhindern, dass direkt zweimal hintereinander exakt dasselbe Wort kommt
+            let pool = vocab.length > 1 && currentWord 
+                ? vocab.filter(w => !(w.es === currentWord.es && w.de === currentWord.de)) 
+                : vocab;
+
+            // Gewichtete Zufallsauswahl (Kat 1 = 8, Kat 2 = 4, Kat 3 = 2, Kat 4 = 1)
+            const totalWeight = pool.reduce((sum, item) => sum + (catMeta[item.cat]?.weight || 8), 0);
+            let random = Math.random() * totalWeight;
+
+            for (const item of pool) {
+                random -= (catMeta[item.cat]?.weight || 8);
+                if (random <= 0) {
+                    currentWord = item;
+                    break;
+                }
+            }
+
+            isRevealed = false;
+            renderCard();
+        }
+
+        function renderCard() {
+            const meta = catMeta[currentWord.cat] || catMeta[1];
+            const card = document.getElementById("flashcard");
+            const badge = document.getElementById("catBadge");
+
+            card.style.borderTopColor = meta.color;
+            badge.style.background = meta.color;
+            badge.innerText = meta.name;
+
+            document.getElementById("questionText").innerText = esToDe ? currentWord.es : currentWord.de;
+            document.getElementById("answerText").innerText = esToDe ? currentWord.de : currentWord.es;
+            
+            document.getElementById("answerText").classList.toggle("hidden", !isRevealed);
+            document.getElementById("actionButtons").classList.toggle("hidden", !isRevealed);
+            document.getElementById("tapHint").classList.toggle("hidden", isRevealed);
+        }
+
+        function revealAnswer() {
+            if (!currentWord || isRevealed) return;
+            isRevealed = true;
+            renderCard();
+        }
+
+        function submitResult(isCorrect) {
+            if (!currentWord) return;
+
+            // Kategorie anpassen
+            if (isCorrect) {
+                currentWord.cat = Math.min(currentWord.cat + 1, 4);
+            } else {
+                currentWord.cat = Math.max(currentWord.cat - 1, 1);
+            }
+
+            updateStats();
+            const wordToSave = { ...currentWord };
+            
+            // Sofort nächstes Wort zeigen (ohne Wartezeit) und im Hintergrund speichern
+            pickNextWord();
+            saveProgressToSheet(wordToSave);
+        }
+
+        async function saveProgressToSheet(wordObj) {
+            setStatus("Speichert...");
+            try {
+                await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify(wordObj)
+                });
+                setStatus("Synchronisiert ✓");
+            } catch (err) {
+                setStatus("Speicherfehler!");
+            }
+        }
+
+        function updateStats() {
+            document.getElementById("totalCount").innerText = `${vocab.length} Vokabeln`;
+            document.getElementById("c1").innerText = vocab.filter(v => v.cat === 1).length;
+            document.getElementById("c2").innerText = vocab.filter(v => v.cat === 2).length;
+            document.getElementById("c3").innerText = vocab.filter(v => v.cat === 3).length;
+            document.getElementById("c4").innerText = vocab.filter(v => v.cat === 4).length;
+        }
+
+        // Beim Start Vokabeln laden
+        loadVocab();
+    </script>
+</body>
+</html>
