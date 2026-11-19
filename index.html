@@ -27,14 +27,19 @@
         .sync-status { font-size: 12px; color: var(--muted); background: #e2e8f0; padding: 4px 10px; border-radius: 12px; }
         
         .controls-top { display: flex; gap: 8px; margin-bottom: 14px; }
-        button { border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
-        button:active { transform: scale(0.98); }
+        button { border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.1s, opacity 0.2s, background-color 0.2s; }
+        button:active { transform: scale(0.97); }
         .btn-dir { flex: 1; background: #1e293b; color: white; padding: 11px; }
         .btn-reload { background: #cbd5e1; color: var(--text); padding: 11px 14px; }
 
         .card { background: var(--card); border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; text-align: center; border-top: 8px solid var(--cat1); }
         .cat-badge { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; color: white; align-self: flex-start; }
-        .word-main { font-size: 26px; font-weight: 700; margin: 18px 0 14px 0; word-break: break-word; }
+        
+        .word-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 18px 0 14px 0; width: 100%; }
+        .word-main { font-size: 26px; font-weight: 700; word-break: break-word; }
+        .btn-speak { background: #e2e8f0; color: #1e293b; width: 42px; height: 42px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; padding: 0; }
+        .btn-speak.speaking { background: #2563eb; color: white; transform: scale(1.08); }
+        .btn-speak-inline { background: rgba(15, 23, 42, 0.08); color: inherit; padding: 5px 10px; font-size: 13px; border-radius: 8px; margin-left: 8px; vertical-align: middle; display: inline-flex; align-items: center; gap: 4px; }
         
         .input-group { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
         input[type="text"] { width: 100%; padding: 14px; font-size: 17px; border: 2px solid #cbd5e1; border-radius: 10px; outline: none; text-align: center; transition: border-color 0.2s; }
@@ -47,7 +52,7 @@
         .fb-typo { background: #fef9c3; border: 1px solid #fde047; color: #713f12; }
         .fb-wrong { background: #fee2e2; border: 1px solid #fca5a5; color: #7f1d1d; }
         .fb-title { font-weight: 700; font-size: 16px; margin-bottom: 6px; display: block; }
-        .fb-detail { font-size: 14px; line-height: 1.4; }
+        .fb-detail { font-size: 14px; line-height: 1.5; }
         .btn-next { width: 100%; background: #1e293b; color: white; padding: 14px; font-size: 16px; margin-top: 12px; }
         .btn-override { background: transparent; color: inherit; opacity: 0.75; font-size: 12px; font-weight: 500; padding: 6px 0 0 0; text-decoration: underline; display: block; width: 100%; text-align: center; }
 
@@ -70,19 +75,23 @@
         </header>
 
         <div class="controls-top">
-            <button class="btn-dir" onclick="toggleDirection()">Richtung: <span id="dirLabel">Spanisch → Deutsch</span></button>
-            <button class="btn-reload" onclick="manualReload()" title="Tabelle neu laden">↻</button>
+            <button type="button" class="btn-dir" onclick="toggleDirection()">Richtung: <span id="dirLabel">Spanisch → Deutsch</span></button>
+            <button type="button" class="btn-reload" onclick="manualReload()" title="Tabelle neu laden">↻</button>
         </div>
 
         <div id="flashcard" class="card">
             <span id="catBadge" class="cat-badge" style="background: var(--cat1);">Kategorie 1</span>
-            <div class="word-main" id="questionText">Lade Vokabeln...</div>
+            
+            <div class="word-row">
+                <div class="word-main" id="questionText">Lade Vokabeln...</div>
+                <button type="button" id="btnSpeakQuestion" class="btn-speak hidden" onclick="speakSpanish()" title="Spanisch vorlesen">🔊</button>
+            </div>
 
             <!-- Eingabebereich -->
             <div id="inputSection" class="input-group">
                 <input type="text" id="userInput" placeholder="Übersetzung eintippen..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-                <button class="btn-check" onclick="checkTypedAnswer()">Prüfen</button>
-                <button class="btn-skip-type" onclick="manualReveal()">Nur aufdecken (ohne Tippen)</button>
+                <button type="button" class="btn-check" onclick="checkTypedAnswer()">Prüfen</button>
+                <button type="button" class="btn-skip-type" onclick="manualReveal()">Nur aufdecken (ohne Tippen)</button>
             </div>
 
             <!-- Auswertung nach Eingabe -->
@@ -90,17 +99,20 @@
                 <div id="feedbackBox" class="feedback-box">
                     <span id="fbTitle" class="fb-title"></span>
                     <div id="fbDetail" class="fb-detail"></div>
-                    <button id="btnOverride" class="btn-override" onclick="overrideLastResult()"></button>
+                    <button type="button" id="btnOverride" class="btn-override" onclick="overrideLastResult()"></button>
                 </div>
-                <button class="btn-next" onclick="pickNextWord()">Nächstes Wort ➔</button>
+                <button type="button" class="btn-next" onclick="pickNextWord()">Nächstes Wort ➔</button>
             </div>
 
             <!-- Klassische Buttons bei manuellem Aufdecken -->
             <div id="manualSection" class="hidden" style="width: 100%;">
-                <div id="manualSolution" style="font-size: 21px; font-weight: 600; color: #334155; padding: 12px 0; border-top: 1px solid #e2e8f0;"></div>
+                <div style="padding: 12px 0; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px;">
+                    <span id="manualSolution" style="font-size: 21px; font-weight: 600; color: #334155;"></span>
+                    <button type="button" id="btnSpeakManual" class="btn-speak-inline hidden" onclick="speakSpanish()">🔊 Anhören</button>
+                </div>
                 <div class="answer-buttons">
-                    <button class="btn-wrong" onclick="submitManualResult(false)">✕ Falsch</button>
-                    <button class="btn-right" onclick="submitManualResult(true)">✓ Richtig</button>
+                    <button type="button" class="btn-wrong" onclick="submitManualResult(false)">✕ Falsch</button>
+                    <button type="button" class="btn-right" onclick="submitManualResult(true)">✓ Richtig</button>
                 </div>
             </div>
         </div>
@@ -127,10 +139,11 @@
         let vocab = [];
         let currentWord = null;
         let esToDe = true;
-        let stepState = "answering"; // "answering" | "evaluated" | "manual"
+        let stepState = "answering";
         let lastWordBeforeChange = null;
         let lastCountedCorrect = false;
         let modifiedInSession = new Set();
+        let spanishVoice = null;
 
         const catMeta = {
             1: { name: "Kategorie 1 (Rot)", color: "#ef4444", weight: 8 },
@@ -138,6 +151,46 @@
             3: { name: "Kategorie 3 (Gelb)", color: "#eab308", weight: 2 },
             4: { name: "Kategorie 4 (Grün)", color: "#22c55e", weight: 1 }
         };
+
+        // Passende spanische Stimme laden (für Android & Desktop)
+        function loadSpanishVoice() {
+            if (!('speechSynthesis' in window)) return;
+            const voices = window.speechSynthesis.getVoices();
+            spanishVoice = voices.find(v => v.lang === 'es-ES') 
+                        || voices.find(v => v.lang.startsWith('es')) 
+                        || null;
+        }
+
+        if ('speechSynthesis' in window) {
+            loadSpanishVoice();
+            window.speechSynthesis.onvoiceschanged = loadSpanishVoice;
+        }
+
+        function speakSpanish() {
+            if (!currentWord || !('speechSynthesis' in window)) {
+                alert("Sprachausgabe wird von diesem Browser leider nicht unterstützt.");
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+
+            // Klammerzusätze wie (m.) oder (ugs.) vor dem Vorlesen entfernen
+            const textToSpeak = currentWord.es.replace(/\([^)]*\)/g, "").trim();
+            if (!textToSpeak) return;
+
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = "es-ES";
+            utterance.rate = 0.9; // Etwas deutlicher und ruhiger aussprechen
+            if (!spanishVoice) loadSpanishVoice();
+            if (spanishVoice) utterance.voice = spanishVoice;
+
+            const btnTop = document.getElementById("btnSpeakQuestion");
+            utterance.onstart = () => btnTop.classList.add("speaking");
+            utterance.onend = () => btnTop.classList.remove("speaking");
+            utterance.onerror = () => btnTop.classList.remove("speaking");
+
+            window.speechSynthesis.speak(utterance);
+        }
 
         document.getElementById("userInput").addEventListener("keydown", function(e) {
             if (e.key === "Enter") {
@@ -175,13 +228,11 @@
         function initApp() {
             const cached = loadFromLocalCache();
             if (cached) {
-                // Sofort ohne Wartezeit mit den gespeicherten Vokabeln starten
                 vocab = cached;
                 updateStats();
                 pickNextWord();
-                loadVocab(true); // Im Hintergrund mit Google Sheets abgleichen
+                loadVocab(true);
             } else {
-                // Allerster Start ohne Cache
                 loadVocab(false);
             }
         }
@@ -197,7 +248,6 @@
                 const response = await fetch(API_URL);
                 const freshVocab = await response.json();
 
-                // Falls während des Ladens schon eine Karte beantwortet wurde, deren lokalen Stand behalten
                 if (modifiedInSession.size > 0) {
                     const localMap = new Map(vocab.map(w => [`${w.es}|${w.de}`, w.cat]));
                     freshVocab.forEach(item => {
@@ -247,6 +297,7 @@
         function pickNextWord() {
             if (vocab.length === 0) {
                 document.getElementById("questionText").innerText = "Keine Vokabeln gefunden.";
+                document.getElementById("btnSpeakQuestion").classList.add("hidden");
                 return;
             }
 
@@ -277,6 +328,9 @@
             badge.innerText = meta.name;
 
             document.getElementById("questionText").innerText = esToDe ? currentWord.es : currentWord.de;
+
+            // Lautsprecher oben nur anzeigen, wenn Spanisch gefragt ist (sonst verrät er die Lösung)
+            document.getElementById("btnSpeakQuestion").classList.toggle("hidden", !esToDe);
 
             const input = document.getElementById("userInput");
             input.value = "";
@@ -371,26 +425,31 @@
             const detail = document.getElementById("fbDetail");
             const overrideBtn = document.getElementById("btnOverride");
 
+            // Wenn Deutsch -> Spanisch abgefragt wurde, jetzt den Vorlese-Button für die Lösung einblenden
+            const audioBtnHtml = !esToDe 
+                ? `<button type="button" class="btn-speak-inline" onclick="speakSpanish()">🔊 Anhören</button>` 
+                : "";
+
             box.className = "feedback-box";
             lastWordBeforeChange = { ...currentWord };
 
             if (result.status === "exact") {
                 box.classList.add("fb-exact");
                 title.innerText = "✓ Perfekt!";
-                detail.innerHTML = `Richtige Übersetzung: <b>${correctAnswer}</b>`;
+                detail.innerHTML = `Richtige Übersetzung: <b>${correctAnswer}</b> ${audioBtnHtml}`;
                 overrideBtn.classList.add("hidden");
                 applyCategoryChange(true);
             } else if (result.status === "typo") {
                 box.classList.add("fb-typo");
                 title.innerText = "⚠ Fast richtig! Tippfehler / Akzent beachten";
-                detail.innerHTML = `Deine Eingabe: <s>${rawInput}</s><br>Korrekt wäre: <b>${correctAnswer}</b><br><small>Wurde als <b>gewusst</b> gewertet.</small>`;
+                detail.innerHTML = `Deine Eingabe: <s>${rawInput}</s><br>Korrekt wäre: <b>${correctAnswer}</b> ${audioBtnHtml}<br><small>Wurde als <b>gewusst</b> gewertet.</small>`;
                 overrideBtn.innerText = "Streng sein: Doch als falsch werten";
                 overrideBtn.classList.remove("hidden");
                 applyCategoryChange(true);
             } else {
                 box.classList.add("fb-wrong");
                 title.innerText = "✕ Leider falsch";
-                detail.innerHTML = `Deine Eingabe: <s>${rawInput}</s><br>Richtige Lösung: <b>${correctAnswer}</b>`;
+                detail.innerHTML = `Deine Eingabe: <s>${rawInput}</s><br>Richtige Lösung: <b>${correctAnswer}</b> ${audioBtnHtml}`;
                 overrideBtn.innerText = "Ausnahme: Doch als richtig werten";
                 overrideBtn.classList.remove("hidden");
                 applyCategoryChange(false);
@@ -423,6 +482,7 @@
             document.getElementById("inputSection").classList.add("hidden");
             document.getElementById("manualSection").classList.remove("hidden");
             document.getElementById("manualSolution").innerText = esToDe ? currentWord.de : currentWord.es;
+            document.getElementById("btnSpeakManual").classList.toggle("hidden", esToDe);
         }
 
         function submitManualResult(isCorrect) {
