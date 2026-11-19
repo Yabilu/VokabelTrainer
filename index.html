@@ -33,7 +33,9 @@
         .btn-reload { background: #cbd5e1; color: var(--text); padding: 11px 14px; }
 
         .card { background: var(--card); border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; text-align: center; border-top: 8px solid var(--cat1); }
-        .cat-badge { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; color: white; align-self: flex-start; }
+        .card-header { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+        .cat-badge { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; color: white; }
+        .btn-edit { background: #f1f5f9; color: var(--muted); padding: 5px 10px; font-size: 13px; border-radius: 8px; }
         
         .word-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 18px 0 14px 0; width: 100%; }
         .word-main { font-size: 26px; font-weight: 700; word-break: break-word; }
@@ -46,6 +48,13 @@
         input[type="text"]:focus { border-color: #1e293b; }
         .btn-check { width: 100%; background: #2563eb; color: white; padding: 14px; font-size: 16px; }
         .btn-skip-type { background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; padding: 6px; text-decoration: underline; }
+
+        .edit-box { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 14px; text-align: left; background: #f8fafc; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .edit-box label { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: -6px; }
+        .edit-box input { text-align: left; padding: 10px 12px; font-size: 15px; background: white; }
+        .edit-actions { display: flex; gap: 8px; margin-top: 4px; }
+        .btn-save-edit { flex: 1; background: #16a34a; color: white; padding: 11px; }
+        .btn-cancel-edit { flex: 1; background: #cbd5e1; color: var(--text); padding: 11px; }
 
         .feedback-box { width: 100%; border-radius: 12px; padding: 14px; margin-top: 10px; text-align: left; }
         .fb-exact { background: #dcfce7; border: 1px solid #86efac; color: #14532d; }
@@ -80,11 +89,26 @@
         </div>
 
         <div id="flashcard" class="card">
-            <span id="catBadge" class="cat-badge" style="background: var(--cat1);">Kategorie 1</span>
+            <div class="card-header">
+                <span id="catBadge" class="cat-badge" style="background: var(--cat1);">Kategorie 1</span>
+                <button type="button" id="btnEditCard" class="btn-edit" onclick="openEditMode()" title="Vokabel korrigieren">✏️ Korrigieren</button>
+            </div>
             
-            <div class="word-row">
+            <div id="wordRow" class="word-row">
                 <div class="word-main" id="questionText">Lade Vokabeln...</div>
                 <button type="button" id="btnSpeakQuestion" class="btn-speak hidden" onclick="speakSpanish()" title="Spanisch vorlesen">🔊</button>
+            </div>
+
+            <!-- Inline-Editor für Duolingo-Tippfehler -->
+            <div id="editSection" class="edit-box hidden">
+                <label for="editEsInput">Spanisch</label>
+                <input type="text" id="editEsInput" />
+                <label for="editDeInput">Deutsch</label>
+                <input type="text" id="editDeInput" />
+                <div class="edit-actions">
+                    <button type="button" class="btn-cancel-edit" onclick="closeEditMode()">Abbrechen</button>
+                    <button type="button" class="btn-save-edit" onclick="saveWordEdit()">Speichern</button>
+                </div>
             </div>
 
             <!-- Eingabebereich -->
@@ -132,14 +156,14 @@
     </div>
 
     <script>
-        // HIER DEINE WEB-APP-URL AUS GOOGLE APPS SCRIPT EINFÜGEN:
         const API_URL = "https://script.google.com/macros/s/AKfycbyBBBayN47em1xvrqQ2nJ70xf2hQXYt_Qlz4cDeQr_Q6UW5Qk33i3joiQfYYF51JNcJ/exec";
         const CACHE_KEY = "vokabeltrainer_cache_v1";
 
         let vocab = [];
         let currentWord = null;
         let esToDe = true;
-        let stepState = "answering";
+        let stepState = "answering"; // "answering" | "evaluated" | "manual"
+        let stateBeforeEdit = "answering";
         let lastWordBeforeChange = null;
         let lastCountedCorrect = false;
         let modifiedInSession = new Set();
@@ -152,7 +176,6 @@
             4: { name: "Kategorie 4 (Grün)", color: "#22c55e", weight: 1 }
         };
 
-        // Passende spanische Stimme laden (für Android & Desktop)
         function loadSpanishVoice() {
             if (!('speechSynthesis' in window)) return;
             const voices = window.speechSynthesis.getVoices();
@@ -173,14 +196,12 @@
             }
 
             window.speechSynthesis.cancel();
-
-            // Klammerzusätze wie (m.) oder (ugs.) vor dem Vorlesen entfernen
             const textToSpeak = currentWord.es.replace(/\([^)]*\)/g, "").trim();
             if (!textToSpeak) return;
 
             const utterance = new SpeechSynthesisUtterance(textToSpeak);
             utterance.lang = "es-ES";
-            utterance.rate = 0.9; // Etwas deutlicher und ruhiger aussprechen
+            utterance.rate = 0.9;
             if (!spanishVoice) loadSpanishVoice();
             if (spanishVoice) utterance.voice = spanishVoice;
 
@@ -294,6 +315,68 @@
             }
         }
 
+        function openEditMode() {
+            if (!currentWord) return;
+            stateBeforeEdit = stepState;
+            document.getElementById("editEsInput").value = currentWord.es;
+            document.getElementById("editDeInput").value = currentWord.de;
+
+            document.getElementById("wordRow").classList.add("hidden");
+            document.getElementById("inputSection").classList.add("hidden");
+            document.getElementById("feedbackSection").classList.add("hidden");
+            document.getElementById("manualSection").classList.add("hidden");
+            document.getElementById("editSection").classList.remove("hidden");
+            document.getElementById("editEsInput").focus();
+        }
+
+        function closeEditMode() {
+            document.getElementById("editSection").classList.add("hidden");
+            document.getElementById("wordRow").classList.remove("hidden");
+
+            if (stateBeforeEdit === "answering") {
+                document.getElementById("inputSection").classList.remove("hidden");
+            } else if (stateBeforeEdit === "evaluated") {
+                document.getElementById("feedbackSection").classList.remove("hidden");
+            } else if (stateBeforeEdit === "manual") {
+                document.getElementById("manualSection").classList.remove("hidden");
+            }
+        }
+
+        async function saveWordEdit() {
+            const newEs = document.getElementById("editEsInput").value.trim();
+            const newDe = document.getElementById("editDeInput").value.trim();
+            if (!newEs || !newDe) return;
+
+            const oldEs = currentWord.es;
+            const oldDe = currentWord.de;
+
+            currentWord.es = newEs;
+            currentWord.de = newDe;
+            modifiedInSession.add(`${newEs}|${newDe}`);
+            saveToLocalCache();
+
+            document.getElementById("questionText").innerText = esToDe ? newEs : newDe;
+            document.getElementById("manualSolution").innerText = esToDe ? newDe : newEs;
+            closeEditMode();
+
+            setStatus("Speichert Korrektur...");
+            try {
+                await fetch(API_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "editWord",
+                        oldEs: oldEs,
+                        oldDe: oldDe,
+                        newEs: newEs,
+                        newDe: newDe
+                    })
+                });
+                setStatus("Korrektur gespeichert ✓");
+            } catch (err) {
+                setStatus("Lokal korrigiert (Offline)");
+            }
+        }
+
         function pickNextWord() {
             if (vocab.length === 0) {
                 document.getElementById("questionText").innerText = "Keine Vokabeln gefunden.";
@@ -328,12 +411,12 @@
             badge.innerText = meta.name;
 
             document.getElementById("questionText").innerText = esToDe ? currentWord.es : currentWord.de;
-
-            // Lautsprecher oben nur anzeigen, wenn Spanisch gefragt ist (sonst verrät er die Lösung)
             document.getElementById("btnSpeakQuestion").classList.toggle("hidden", !esToDe);
 
             const input = document.getElementById("userInput");
             input.value = "";
+            document.getElementById("wordRow").classList.remove("hidden");
+            document.getElementById("editSection").classList.add("hidden");
             document.getElementById("inputSection").classList.remove("hidden");
             document.getElementById("feedbackSection").classList.add("hidden");
             document.getElementById("manualSection").classList.add("hidden");
@@ -425,7 +508,6 @@
             const detail = document.getElementById("fbDetail");
             const overrideBtn = document.getElementById("btnOverride");
 
-            // Wenn Deutsch -> Spanisch abgefragt wurde, jetzt den Vorlese-Button für die Lösung einblenden
             const audioBtnHtml = !esToDe 
                 ? `<button type="button" class="btn-speak-inline" onclick="speakSpanish()">🔊 Anhören</button>` 
                 : "";
