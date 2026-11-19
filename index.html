@@ -7,6 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e293b">
     <title>Vokabeltrainer</title>
+    <link rel="manifest" href="manifest.json">
     <style>
         :root {
             --bg: #f1f5f9;
@@ -21,29 +22,42 @@
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: var(--bg); color: var(--text); margin: 0; padding: 16px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 440px; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
         h1 { font-size: 20px; margin: 0; }
         .sync-status { font-size: 12px; color: var(--muted); background: #e2e8f0; padding: 4px 10px; border-radius: 12px; }
         
-        .controls-top { display: flex; gap: 8px; margin-bottom: 16px; }
+        .controls-top { display: flex; gap: 8px; margin-bottom: 14px; }
         button { border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
         button:active { transform: scale(0.98); }
-        .btn-dir { flex: 1; background: #1e293b; color: white; padding: 12px; }
-        .btn-reload { background: #cbd5e1; color: var(--text); padding: 12px 14px; }
+        .btn-dir { flex: 1; background: #1e293b; color: white; padding: 11px; }
+        .btn-reload { background: #cbd5e1; color: var(--text); padding: 11px 14px; }
 
-        .card { background: var(--card); border-radius: 16px; padding: 24px; min-height: 220px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); display: flex; flex-direction: column; justify-content: space-between; align-items: center; text-align: center; cursor: pointer; border-top: 8px solid var(--cat1); position: relative; }
+        .card { background: var(--card); border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; text-align: center; border-top: 8px solid var(--cat1); }
         .cat-badge { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; color: white; align-self: flex-start; }
-        .word-main { font-size: 28px; font-weight: 700; margin: 20px 0; word-break: break-word; }
-        .word-sub { font-size: 22px; color: #334155; border-top: 1px solid #e2e8f0; padding-top: 16px; width: 100%; margin-top: 8px; }
-        .hint { font-size: 12px; color: var(--muted); }
+        .word-main { font-size: 26px; font-weight: 700; margin: 18px 0 14px 0; word-break: break-word; }
+        
+        .input-group { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+        input[type="text"] { width: 100%; padding: 14px; font-size: 17px; border: 2px solid #cbd5e1; border-radius: 10px; outline: none; text-align: center; transition: border-color 0.2s; }
+        input[type="text"]:focus { border-color: #1e293b; }
+        .btn-check { width: 100%; background: #2563eb; color: white; padding: 14px; font-size: 16px; }
+        .btn-skip-type { background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; padding: 6px; text-decoration: underline; }
 
-        .answer-buttons { display: flex; gap: 12px; margin-top: 16px; }
-        .btn-wrong { flex: 1; background: #fee2e2; color: #b91c1c; padding: 16px; font-size: 16px; border: 2px solid #fca5a5; }
-        .btn-right { flex: 1; background: #dcfce7; color: #15803d; padding: 16px; font-size: 16px; border: 2px solid #86efac; }
+        .feedback-box { width: 100%; border-radius: 12px; padding: 14px; margin-top: 10px; text-align: left; }
+        .fb-exact { background: #dcfce7; border: 1px solid #86efac; color: #14532d; }
+        .fb-typo { background: #fef9c3; border: 1px solid #fde047; color: #713f12; }
+        .fb-wrong { background: #fee2e2; border: 1px solid #fca5a5; color: #7f1d1d; }
+        .fb-title { font-weight: 700; font-size: 16px; margin-bottom: 6px; display: block; }
+        .fb-detail { font-size: 14px; line-height: 1.4; }
+        .btn-next { width: 100%; background: #1e293b; color: white; padding: 14px; font-size: 16px; margin-top: 12px; }
+        .btn-override { background: transparent; color: inherit; opacity: 0.75; font-size: 12px; font-weight: 500; padding: 6px 0 0 0; text-decoration: underline; display: block; width: 100%; text-align: center; }
+
+        .answer-buttons { display: flex; gap: 12px; width: 100%; margin-top: 12px; }
+        .btn-wrong { flex: 1; background: #fee2e2; color: #b91c1c; padding: 14px; font-size: 15px; border: 2px solid #fca5a5; }
+        .btn-right { flex: 1; background: #dcfce7; color: #15803d; padding: 14px; font-size: 15px; border: 2px solid #86efac; }
         .hidden { display: none !important; }
 
-        .stats-box { background: var(--card); border-radius: 12px; padding: 16px; margin-top: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; margin-top: 10px; }
+        .stats-box { background: var(--card); border-radius: 12px; padding: 14px; margin-top: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; margin-top: 8px; }
         .stat-item { padding: 8px 4px; border-radius: 8px; color: white; font-weight: 700; font-size: 14px; }
         .stat-label { font-size: 11px; font-weight: 400; display: block; opacity: 0.9; }
     </style>
@@ -57,19 +71,38 @@
 
         <div class="controls-top">
             <button class="btn-dir" onclick="toggleDirection()">Richtung: <span id="dirLabel">Spanisch → Deutsch</span></button>
-            <button class="btn-reload" onclick="loadVocab()" title="Tabelle neu laden">↻</button>
+            <button class="btn-reload" onclick="manualReload()" title="Tabelle neu laden">↻</button>
         </div>
 
-        <div id="flashcard" class="card" onclick="revealAnswer()">
+        <div id="flashcard" class="card">
             <span id="catBadge" class="cat-badge" style="background: var(--cat1);">Kategorie 1</span>
             <div class="word-main" id="questionText">Lade Vokabeln...</div>
-            <div class="word-sub hidden" id="answerText"></div>
-            <div class="hint" id="tapHint">Antippen zum Aufdecken</div>
-        </div>
 
-        <div id="actionButtons" class="answer-buttons hidden">
-            <button class="btn-wrong" onclick="submitResult(false)">✕ Falsch</button>
-            <button class="btn-right" onclick="submitResult(true)">✓ Richtig</button>
+            <!-- Eingabebereich -->
+            <div id="inputSection" class="input-group">
+                <input type="text" id="userInput" placeholder="Übersetzung eintippen..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+                <button class="btn-check" onclick="checkTypedAnswer()">Prüfen</button>
+                <button class="btn-skip-type" onclick="manualReveal()">Nur aufdecken (ohne Tippen)</button>
+            </div>
+
+            <!-- Auswertung nach Eingabe -->
+            <div id="feedbackSection" class="hidden" style="width: 100%;">
+                <div id="feedbackBox" class="feedback-box">
+                    <span id="fbTitle" class="fb-title"></span>
+                    <div id="fbDetail" class="fb-detail"></div>
+                    <button id="btnOverride" class="btn-override" onclick="overrideLastResult()"></button>
+                </div>
+                <button class="btn-next" onclick="pickNextWord()">Nächstes Wort ➔</button>
+            </div>
+
+            <!-- Klassische Buttons bei manuellem Aufdecken -->
+            <div id="manualSection" class="hidden" style="width: 100%;">
+                <div id="manualSolution" style="font-size: 21px; font-weight: 600; color: #334155; padding: 12px 0; border-top: 1px solid #e2e8f0;"></div>
+                <div class="answer-buttons">
+                    <button class="btn-wrong" onclick="submitManualResult(false)">✕ Falsch</button>
+                    <button class="btn-right" onclick="submitManualResult(true)">✓ Richtig</button>
+                </div>
+            </div>
         </div>
 
         <div class="stats-box">
@@ -88,12 +121,16 @@
 
     <script>
         // HIER DEINE WEB-APP-URL AUS GOOGLE APPS SCRIPT EINFÜGEN:
-        const API_URL = "https://script.google.com/macros/s/AKfycbyBBBayN47em1xvrqQ2nJ70xf2hQXYt_Qlz4cDeQr_Q6UW5Qk33i3joiQfYYF51JNcJ/exec";
+        const API_URL = "DEINE_GOOGLE_APPS_SCRIPT_URL_HIER_EINFUEGEN";
+        const CACHE_KEY = "vokabeltrainer_cache_v1";
 
         let vocab = [];
         let currentWord = null;
         let esToDe = true;
-        let isRevealed = false;
+        let stepState = "answering"; // "answering" | "evaluated" | "manual"
+        let lastWordBeforeChange = null;
+        let lastCountedCorrect = false;
+        let modifiedInSession = new Set();
 
         const catMeta = {
             1: { name: "Kategorie 1 (Rot)", color: "#ef4444", weight: 8 },
@@ -102,17 +139,96 @@
             4: { name: "Kategorie 4 (Grün)", color: "#22c55e", weight: 1 }
         };
 
-        async function loadVocab() {
-            setStatus("Lade Tabelle...");
+        document.getElementById("userInput").addEventListener("keydown", function(e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                if (stepState === "answering") {
+                    checkTypedAnswer();
+                }
+            }
+        });
+
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "Enter" && stepState === "evaluated" && document.activeElement.id !== "userInput") {
+                e.preventDefault();
+                pickNextWord();
+            }
+        });
+
+        function saveToLocalCache() {
             try {
-                const response = await fetch(API_URL);
-                vocab = await response.json();
-                setStatus("Synchronisiert ✓");
+                localStorage.setItem(CACHE_KEY, JSON.stringify(vocab));
+            } catch (e) {}
+        }
+
+        function loadFromLocalCache() {
+            try {
+                const raw = localStorage.getItem(CACHE_KEY);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function initApp() {
+            const cached = loadFromLocalCache();
+            if (cached) {
+                // Sofort ohne Wartezeit mit den gespeicherten Vokabeln starten
+                vocab = cached;
                 updateStats();
                 pickNextWord();
+                loadVocab(true); // Im Hintergrund mit Google Sheets abgleichen
+            } else {
+                // Allerster Start ohne Cache
+                loadVocab(false);
+            }
+        }
+
+        function manualReload() {
+            modifiedInSession.clear();
+            loadVocab(false);
+        }
+
+        async function loadVocab(isBackground) {
+            setStatus(isBackground ? "Aktualisiere..." : "Lade Tabelle...");
+            try {
+                const response = await fetch(API_URL);
+                const freshVocab = await response.json();
+
+                // Falls während des Ladens schon eine Karte beantwortet wurde, deren lokalen Stand behalten
+                if (modifiedInSession.size > 0) {
+                    const localMap = new Map(vocab.map(w => [`${w.es}|${w.de}`, w.cat]));
+                    freshVocab.forEach(item => {
+                        const key = `${item.es}|${item.de}`;
+                        if (modifiedInSession.has(key) && localMap.has(key)) {
+                            item.cat = localMap.get(key);
+                        }
+                    });
+                }
+
+                vocab = freshVocab;
+                saveToLocalCache();
+                updateStats();
+
+                if (currentWord) {
+                    const updatedCurrent = vocab.find(w => w.es === currentWord.es && w.de === currentWord.de);
+                    if (updatedCurrent) currentWord = updatedCurrent;
+                }
+
+                if (!isBackground || !currentWord) {
+                    pickNextWord();
+                }
+
+                setStatus("Synchronisiert ✓");
             } catch (err) {
-                setStatus("Verbindungsfehler!");
-                document.getElementById("questionText").innerText = "Fehler beim Laden der Google-Tabelle.";
+                if (vocab.length > 0) {
+                    setStatus("Offline-Modus");
+                } else {
+                    setStatus("Verbindungsfehler!");
+                    document.getElementById("questionText").innerText = "Fehler beim Laden der Google-Tabelle.";
+                }
             }
         }
 
@@ -123,7 +239,9 @@
         function toggleDirection() {
             esToDe = !esToDe;
             document.getElementById("dirLabel").innerText = esToDe ? "Spanisch → Deutsch" : "Deutsch → Spanisch";
-            if (currentWord) renderCard();
+            if (currentWord && stepState === "answering") {
+                renderQuestion();
+            }
         }
 
         function pickNextWord() {
@@ -132,12 +250,10 @@
                 return;
             }
 
-            // Verhindern, dass direkt zweimal hintereinander exakt dasselbe Wort kommt
             let pool = vocab.length > 1 && currentWord 
                 ? vocab.filter(w => !(w.es === currentWord.es && w.de === currentWord.de)) 
                 : vocab;
 
-            // Gewichtete Zufallsauswahl (Kat 1 = 8, Kat 2 = 4, Kat 3 = 2, Kat 4 = 1)
             const totalWeight = pool.reduce((sum, item) => sum + (catMeta[item.cat]?.weight || 8), 0);
             let random = Math.random() * totalWeight;
 
@@ -149,49 +265,170 @@
                 }
             }
 
-            isRevealed = false;
-            renderCard();
+            stepState = "answering";
+            renderQuestion();
         }
 
-        function renderCard() {
+        function renderQuestion() {
             const meta = catMeta[currentWord.cat] || catMeta[1];
-            const card = document.getElementById("flashcard");
+            document.getElementById("flashcard").style.borderTopColor = meta.color;
             const badge = document.getElementById("catBadge");
-
-            card.style.borderTopColor = meta.color;
             badge.style.background = meta.color;
             badge.innerText = meta.name;
 
             document.getElementById("questionText").innerText = esToDe ? currentWord.es : currentWord.de;
-            document.getElementById("answerText").innerText = esToDe ? currentWord.de : currentWord.es;
+
+            const input = document.getElementById("userInput");
+            input.value = "";
+            document.getElementById("inputSection").classList.remove("hidden");
+            document.getElementById("feedbackSection").classList.add("hidden");
+            document.getElementById("manualSection").classList.add("hidden");
             
-            document.getElementById("answerText").classList.toggle("hidden", !isRevealed);
-            document.getElementById("actionButtons").classList.toggle("hidden", !isRevealed);
-            document.getElementById("tapHint").classList.toggle("hidden", isRevealed);
+            setTimeout(() => input.focus(), 50);
         }
 
-        function revealAnswer() {
-            if (!currentWord || isRevealed) return;
-            isRevealed = true;
-            renderCard();
+        function levenshtein(a, b) {
+            const matrix = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+            for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+            for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+
+            for (let i = 1; i <= a.length; i++) {
+                for (let j = 1; j <= b.length; j++) {
+                    const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j] + 1,
+                        matrix[i][j - 1] + 1,
+                        matrix[i - 1][j - 1] + cost
+                    );
+                }
+            }
+            return matrix[a.length][b.length];
         }
 
-        function submitResult(isCorrect) {
-            if (!currentWord) return;
+        function cleanText(str) {
+            return str.toLowerCase()
+                .replace(/\([^)]*\)/g, "")
+                .replace(/[¿?¡!.,;:]/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
+        }
 
-            // Kategorie anpassen
-            if (isCorrect) {
-                currentWord.cat = Math.min(currentWord.cat + 1, 4);
-            } else {
-                currentWord.cat = Math.max(currentWord.cat - 1, 1);
+        function stripAccents(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        function evaluateInput(userRaw, targetRaw) {
+            const userClean = cleanText(userRaw);
+            if (!userClean) return { status: "wrong" };
+
+            const variants = [cleanText(targetRaw)];
+            targetRaw.split(/[,/]/).forEach(part => {
+                const cleaned = cleanText(part);
+                if (cleaned) variants.push(cleaned);
+            });
+
+            let bestStatus = "wrong";
+
+            for (const target of variants) {
+                if (userClean === target) {
+                    return { status: "exact" };
+                }
+
+                const userNoAcc = stripAccents(userClean);
+                const targetNoAcc = stripAccents(target);
+                if (userNoAcc === targetNoAcc) {
+                    bestStatus = "typo";
+                    continue;
+                }
+
+                const dist = levenshtein(userNoAcc, targetNoAcc);
+                const maxAllowed = target.length <= 3 ? 0 : (target.length <= 6 ? 1 : 2);
+
+                if (dist <= maxAllowed) {
+                    bestStatus = "typo";
+                }
             }
 
+            return { status: bestStatus };
+        }
+
+        function checkTypedAnswer() {
+            const rawInput = document.getElementById("userInput").value;
+            if (!rawInput.trim()) {
+                document.getElementById("userInput").focus();
+                return;
+            }
+
+            const correctAnswer = esToDe ? currentWord.de : currentWord.es;
+            const result = evaluateInput(rawInput, correctAnswer);
+
+            stepState = "evaluated";
+            document.getElementById("inputSection").classList.add("hidden");
+            document.getElementById("feedbackSection").classList.remove("hidden");
+
+            const box = document.getElementById("feedbackBox");
+            const title = document.getElementById("fbTitle");
+            const detail = document.getElementById("fbDetail");
+            const overrideBtn = document.getElementById("btnOverride");
+
+            box.className = "feedback-box";
+            lastWordBeforeChange = { ...currentWord };
+
+            if (result.status === "exact") {
+                box.classList.add("fb-exact");
+                title.innerText = "✓ Perfekt!";
+                detail.innerHTML = `Richtige Übersetzung: <b>${correctAnswer}</b>`;
+                overrideBtn.classList.add("hidden");
+                applyCategoryChange(true);
+            } else if (result.status === "typo") {
+                box.classList.add("fb-typo");
+                title.innerText = "⚠ Fast richtig! Tippfehler / Akzent beachten";
+                detail.innerHTML = `Deine Eingabe: <s>${rawInput}</s><br>Korrekt wäre: <b>${correctAnswer}</b><br><small>Wurde als <b>gewusst</b> gewertet.</small>`;
+                overrideBtn.innerText = "Streng sein: Doch als falsch werten";
+                overrideBtn.classList.remove("hidden");
+                applyCategoryChange(true);
+            } else {
+                box.classList.add("fb-wrong");
+                title.innerText = "✕ Leider falsch";
+                detail.innerHTML = `Deine Eingabe: <s>${rawInput}</s><br>Richtige Lösung: <b>${correctAnswer}</b>`;
+                overrideBtn.innerText = "Ausnahme: Doch als richtig werten";
+                overrideBtn.classList.remove("hidden");
+                applyCategoryChange(false);
+            }
+
+            setTimeout(() => document.querySelector(".btn-next").focus(), 50);
+        }
+
+        function applyCategoryChange(isCorrect) {
+            lastCountedCorrect = isCorrect;
+            if (isCorrect) {
+                currentWord.cat = Math.min(lastWordBeforeChange.cat + 1, 4);
+            } else {
+                currentWord.cat = Math.max(lastWordBeforeChange.cat - 1, 1);
+            }
+            modifiedInSession.add(`${currentWord.es}|${currentWord.de}`);
+            saveToLocalCache();
             updateStats();
-            const wordToSave = { ...currentWord };
-            
-            // Sofort nächstes Wort zeigen (ohne Wartezeit) und im Hintergrund speichern
+            saveProgressToSheet({ ...currentWord });
+        }
+
+        function overrideLastResult() {
+            applyCategoryChange(!lastCountedCorrect);
+            document.getElementById("btnOverride").classList.add("hidden");
+            document.getElementById("fbTitle").innerText += " (Korrigiert)";
+        }
+
+        function manualReveal() {
+            stepState = "manual";
+            document.getElementById("inputSection").classList.add("hidden");
+            document.getElementById("manualSection").classList.remove("hidden");
+            document.getElementById("manualSolution").innerText = esToDe ? currentWord.de : currentWord.es;
+        }
+
+        function submitManualResult(isCorrect) {
+            lastWordBeforeChange = { ...currentWord };
+            applyCategoryChange(isCorrect);
             pickNextWord();
-            saveProgressToSheet(wordToSave);
         }
 
         async function saveProgressToSheet(wordObj) {
@@ -203,7 +440,7 @@
                 });
                 setStatus("Synchronisiert ✓");
             } catch (err) {
-                setStatus("Speicherfehler!");
+                setStatus("Lokal gespeichert (Offline)");
             }
         }
 
@@ -215,8 +452,11 @@
             document.getElementById("c4").innerText = vocab.filter(v => v.cat === 4).length;
         }
 
-        // Beim Start Vokabeln laden
-        loadVocab();
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+
+        initApp();
     </script>
 </body>
 </html>
