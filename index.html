@@ -29,13 +29,17 @@
         .controls-top { display: flex; gap: 8px; margin-bottom: 14px; }
         button { border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.1s, opacity 0.2s, background-color 0.2s; }
         button:active { transform: scale(0.97); }
-        .btn-dir { flex: 1; background: #1e293b; color: white; padding: 11px; }
+        .btn-dir { flex: 1; background: #1e293b; color: white; padding: 11px 12px; display: flex; align-items: center; justify-content: space-between; }
+        .btn-dir.reverse-active { background: #0f766e; }
+        .dir-hint { font-size: 11px; background: rgba(255,255,255,0.18); padding: 3px 8px; border-radius: 6px; font-weight: 500; }
         .btn-reload { background: #cbd5e1; color: var(--text); padding: 11px 14px; }
 
         .card { background: var(--card); border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; text-align: center; border-top: 8px solid var(--cat1); }
-        .card-header { width: 100%; display: flex; justify-content: space-between; align-items: center; }
-        .cat-badge { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; color: white; }
-        .btn-edit { background: #f1f5f9; color: var(--muted); padding: 5px 10px; font-size: 13px; border-radius: 8px; }
+        .card-header { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+        .badges-left { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .cat-badge { font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 20px; color: white; }
+        .other-cat-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 12px; background: #f1f5f9; color: var(--muted); border: 1px solid #e2e8f0; }
+        .btn-edit { background: #f1f5f9; color: var(--muted); padding: 5px 10px; font-size: 13px; border-radius: 8px; flex-shrink: 0; }
         
         .word-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 18px 0 14px 0; width: 100%; }
         .word-main { font-size: 26px; font-weight: 700; word-break: break-word; }
@@ -71,9 +75,14 @@
         .hidden { display: none !important; }
 
         .stats-box { background: var(--card); border-radius: 12px; padding: 14px; margin-top: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; margin-top: 8px; }
-        .stat-item { padding: 8px 4px; border-radius: 8px; color: white; font-weight: 700; font-size: 14px; }
-        .stat-label { font-size: 11px; font-weight: 400; display: block; opacity: 0.9; }
+        .stats-header { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 600; }
+        .dir-stats-block { padding: 10px; border-radius: 10px; border: 2px solid transparent; background: #f8fafc; margin-bottom: 8px; transition: border-color 0.2s, background-color 0.2s; }
+        .dir-stats-block.active-dir-box { border-color: #1e293b; background: #ffffff; }
+        .dir-stats-title { font-size: 12px; font-weight: 700; display: flex; justify-content: space-between; margin-bottom: 6px; color: var(--text); }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+        .stat-item { padding: 6px 4px; border-radius: 7px; color: white; font-weight: 700; font-size: 13px; }
+        .stat-label { font-size: 10px; font-weight: 400; display: block; opacity: 0.92; }
+        .compare-summary { font-size: 12px; color: var(--muted); text-align: center; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
@@ -84,13 +93,19 @@
         </header>
 
         <div class="controls-top">
-            <button type="button" class="btn-dir" onclick="toggleDirection()">Richtung: <span id="dirLabel">Spanisch → Deutsch</span></button>
+            <button type="button" id="btnDirection" class="btn-dir" onclick="toggleDirection()">
+                <span id="dirLabel">🇪🇸 Spanisch → 🇩🇪 Deutsch</span>
+                <span class="dir-hint">⇄ Wechseln</span>
+            </button>
             <button type="button" class="btn-reload" onclick="manualReload()" title="Tabelle neu laden">↻</button>
         </div>
 
         <div id="flashcard" class="card">
             <div class="card-header">
-                <span id="catBadge" class="cat-badge" style="background: var(--cat1);">Kategorie 1</span>
+                <div class="badges-left">
+                    <span id="catBadge" class="cat-badge" style="background: var(--cat1);">Kat 1 (Rot)</span>
+                    <span id="otherCatBadge" class="other-cat-badge">Gegenrichtung: Kat 1</span>
+                </div>
                 <button type="button" id="btnEditCard" class="btn-edit" onclick="openEditMode()" title="Vokabel korrigieren">✏️ Korrigieren</button>
             </div>
             
@@ -142,39 +157,88 @@
         </div>
 
         <div class="stats-box">
-            <div style="font-size: 13px; color: var(--muted); display: flex; justify-content: space-between;">
-                <span>Lernstand</span>
+            <div class="stats-header">
+                <span>Lernstand-Vergleich</span>
                 <span id="totalCount">0 Vokabeln</span>
             </div>
-            <div class="stats-grid">
-                <div class="stat-item" style="background: var(--cat1);"><span id="c1">0</span><span class="stat-label">Rot</span></div>
-                <div class="stat-item" style="background: var(--cat2);"><span id="c2">0</span><span class="stat-label">Orange</span></div>
-                <div class="stat-item" style="background: var(--cat3);"><span id="c3">0</span><span class="stat-label">Gelb</span></div>
-                <div class="stat-item" style="background: var(--cat4);"><span id="c4">0</span><span class="stat-label">Grün</span></div>
+
+            <!-- Statistik Richtung 1: Spanisch -> Deutsch -->
+            <div id="boxStatsEsDe" class="dir-stats-block active-dir-box">
+                <div class="dir-stats-title">
+                    <span>🇪🇸 → 🇩🇪 Spanisch → Deutsch</span>
+                    <span id="avgEsDe">Ø 1,0</span>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item" style="background: var(--cat1);"><span id="esde1">0</span><span class="stat-label">Rot</span></div>
+                    <div class="stat-item" style="background: var(--cat2);"><span id="esde2">0</span><span class="stat-label">Orange</span></div>
+                    <div class="stat-item" style="background: var(--cat3);"><span id="esde3">0</span><span class="stat-label">Gelb</span></div>
+                    <div class="stat-item" style="background: var(--cat4);"><span id="esde4">0</span><span class="stat-label">Grün</span></div>
+                </div>
             </div>
+
+            <!-- Statistik Richtung 2: Deutsch -> Spanisch -->
+            <div id="boxStatsDeEs" class="dir-stats-block">
+                <div class="dir-stats-title">
+                    <span>🇩🇪 → 🇪🇸 Deutsch → Spanisch</span>
+                    <span id="avgDeEs">Ø 1,0</span>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item" style="background: var(--cat1);"><span id="dees1">0</span><span class="stat-label">Rot</span></div>
+                    <div class="stat-item" style="background: var(--cat2);"><span id="dees2">0</span><span class="stat-label">Orange</span></div>
+                    <div class="stat-item" style="background: var(--cat3);"><span id="dees3">0</span><span class="stat-label">Gelb</span></div>
+                    <div class="stat-item" style="background: var(--cat4);"><span id="dees4">0</span><span class="stat-label">Grün</span></div>
+                </div>
+            </div>
+
+            <div id="compareSummary" class="compare-summary">Lade Vergleichsdaten...</div>
         </div>
     </div>
 
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbyBBBayN47em1xvrqQ2nJ70xf2hQXYt_Qlz4cDeQr_Q6UW5Qk33i3joiQfYYF51JNcJ/exec";
-        const CACHE_KEY = "vokabeltrainer_cache_v1";
+        const CACHE_KEY = "vokabeltrainer_cache_v2";
 
         let vocab = [];
         let currentWord = null;
         let esToDe = true;
         let stepState = "answering"; // "answering" | "evaluated" | "manual"
         let stateBeforeEdit = "answering";
-        let lastWordBeforeChange = null;
+        let lastCatBeforeChange = 1;
         let lastCountedCorrect = false;
         let modifiedInSession = new Set();
         let spanishVoice = null;
 
         const catMeta = {
-            1: { name: "Kategorie 1 (Rot)", color: "#ef4444", weight: 8 },
-            2: { name: "Kategorie 2 (Orange)", color: "#f97316", weight: 4 },
-            3: { name: "Kategorie 3 (Gelb)", color: "#eab308", weight: 2 },
-            4: { name: "Kategorie 4 (Grün)", color: "#22c55e", weight: 1 }
+            1: { name: "Kat 1 (Rot)", color: "#ef4444", weight: 8 },
+            2: { name: "Kat 2 (Orange)", color: "#f97316", weight: 4 },
+            3: { name: "Kat 3 (Gelb)", color: "#eab308", weight: 2 },
+            4: { name: "Kat 4 (Grün)", color: "#22c55e", weight: 1 }
         };
+
+        function normalizeWordItem(item) {
+            return {
+                es: String(item.es || "").trim(),
+                de: String(item.de || "").trim(),
+                catEsDe: Math.min(Math.max(parseInt(item.catEsDe || item.cat || 1) || 1, 1), 4),
+                catDeEs: Math.min(Math.max(parseInt(item.catDeEs || 1) || 1, 1), 4)
+            };
+        }
+
+        function getActiveCat(word) {
+            return esToDe ? word.catEsDe : word.catDeEs;
+        }
+
+        function getOtherCat(word) {
+            return esToDe ? word.catDeEs : word.catEsDe;
+        }
+
+        function setActiveCat(word, value) {
+            if (esToDe) {
+                word.catEsDe = value;
+            } else {
+                word.catDeEs = value;
+            }
+        }
 
         function loadSpanishVoice() {
             if (!('speechSynthesis' in window)) return;
@@ -240,7 +304,7 @@
                 const raw = localStorage.getItem(CACHE_KEY);
                 if (!raw) return null;
                 const parsed = JSON.parse(raw);
-                return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+                return Array.isArray(parsed) && parsed.length > 0 ? parsed.map(normalizeWordItem) : null;
             } catch (e) {
                 return null;
             }
@@ -267,14 +331,17 @@
             setStatus(isBackground ? "Aktualisiere..." : "Lade Tabelle...");
             try {
                 const response = await fetch(API_URL);
-                const freshVocab = await response.json();
+                const rawList = await response.json();
+                const freshVocab = rawList.map(normalizeWordItem);
 
                 if (modifiedInSession.size > 0) {
-                    const localMap = new Map(vocab.map(w => [`${w.es}|${w.de}`, w.cat]));
+                    const localMap = new Map(vocab.map(w => [`${w.es}|${w.de}`, w]));
                     freshVocab.forEach(item => {
                         const key = `${item.es}|${item.de}`;
                         if (modifiedInSession.has(key) && localMap.has(key)) {
-                            item.cat = localMap.get(key);
+                            const localItem = localMap.get(key);
+                            item.catEsDe = localItem.catEsDe;
+                            item.catDeEs = localItem.catDeEs;
                         }
                     });
                 }
@@ -290,6 +357,8 @@
 
                 if (!isBackground || !currentWord) {
                     pickNextWord();
+                } else if (stepState === "answering") {
+                    renderQuestion();
                 }
 
                 setStatus("Synchronisiert ✓");
@@ -309,9 +378,18 @@
 
         function toggleDirection() {
             esToDe = !esToDe;
-            document.getElementById("dirLabel").innerText = esToDe ? "Spanisch → Deutsch" : "Deutsch → Spanisch";
-            if (currentWord && stepState === "answering") {
-                renderQuestion();
+
+            const btn = document.getElementById("btnDirection");
+            btn.classList.toggle("reverse-active", !esToDe);
+            document.getElementById("dirLabel").innerText = esToDe 
+                ? "🇪🇸 Spanisch → 🇩🇪 Deutsch" 
+                : "🇩🇪 Deutsch → 🇪🇸 Spanisch";
+
+            document.getElementById("boxStatsEsDe").classList.toggle("active-dir-box", esToDe);
+            document.getElementById("boxStatsDeEs").classList.toggle("active-dir-box", !esToDe);
+
+            if (vocab.length > 0) {
+                pickNextWord();
             }
         }
 
@@ -388,11 +466,17 @@
                 ? vocab.filter(w => !(w.es === currentWord.es && w.de === currentWord.de)) 
                 : vocab;
 
-            const totalWeight = pool.reduce((sum, item) => sum + (catMeta[item.cat]?.weight || 8), 0);
+            // Gewichtung basierend auf der Kategorie der AKTIVEN Richtung
+            const totalWeight = pool.reduce((sum, item) => {
+                const cat = getActiveCat(item);
+                return sum + (catMeta[cat]?.weight || 8);
+            }, 0);
+
             let random = Math.random() * totalWeight;
 
             for (const item of pool) {
-                random -= (catMeta[item.cat]?.weight || 8);
+                const cat = getActiveCat(item);
+                random -= (catMeta[cat]?.weight || 8);
                 if (random <= 0) {
                     currentWord = item;
                     break;
@@ -404,12 +488,16 @@
         }
 
         function renderQuestion() {
-            const meta = catMeta[currentWord.cat] || catMeta[1];
+            const activeCat = getActiveCat(currentWord);
+            const otherCat = getOtherCat(currentWord);
+            const meta = catMeta[activeCat] || catMeta[1];
+
             document.getElementById("flashcard").style.borderTopColor = meta.color;
             const badge = document.getElementById("catBadge");
             badge.style.background = meta.color;
             badge.innerText = meta.name;
 
+            document.getElementById("otherCatBadge").innerText = `Gegenrichtung: Kat ${otherCat}`;
             document.getElementById("questionText").innerText = esToDe ? currentWord.es : currentWord.de;
             document.getElementById("btnSpeakQuestion").classList.toggle("hidden", !esToDe);
 
@@ -513,7 +601,7 @@
                 : "";
 
             box.className = "feedback-box";
-            lastWordBeforeChange = { ...currentWord };
+            lastCatBeforeChange = getActiveCat(currentWord);
 
             if (result.status === "exact") {
                 box.classList.add("fb-exact");
@@ -542,11 +630,18 @@
 
         function applyCategoryChange(isCorrect) {
             lastCountedCorrect = isCorrect;
-            if (isCorrect) {
-                currentWord.cat = Math.min(lastWordBeforeChange.cat + 1, 4);
-            } else {
-                currentWord.cat = Math.max(lastWordBeforeChange.cat - 1, 1);
-            }
+            const newCat = isCorrect 
+                ? Math.min(lastCatBeforeChange + 1, 4) 
+                : Math.max(lastCatBeforeChange - 1, 1);
+
+            setActiveCat(currentWord, newCat);
+
+            const meta = catMeta[newCat] || catMeta[1];
+            document.getElementById("flashcard").style.borderTopColor = meta.color;
+            const badge = document.getElementById("catBadge");
+            badge.style.background = meta.color;
+            badge.innerText = meta.name;
+
             modifiedInSession.add(`${currentWord.es}|${currentWord.de}`);
             saveToLocalCache();
             updateStats();
@@ -568,7 +663,7 @@
         }
 
         function submitManualResult(isCorrect) {
-            lastWordBeforeChange = { ...currentWord };
+            lastCatBeforeChange = getActiveCat(currentWord);
             applyCategoryChange(isCorrect);
             pickNextWord();
         }
@@ -587,11 +682,39 @@
         }
 
         function updateStats() {
-            document.getElementById("totalCount").innerText = `${vocab.length} Vokabeln`;
-            document.getElementById("c1").innerText = vocab.filter(v => v.cat === 1).length;
-            document.getElementById("c2").innerText = vocab.filter(v => v.cat === 2).length;
-            document.getElementById("c3").innerText = vocab.filter(v => v.cat === 3).length;
-            document.getElementById("c4").innerText = vocab.filter(v => v.cat === 4).length;
+            const total = vocab.length;
+            document.getElementById("totalCount").innerText = `${total} Vokabeln`;
+
+            const esdeCounts = [1, 2, 3, 4].map(c => vocab.filter(v => v.catEsDe === c).length);
+            const deesCounts = [1, 2, 3, 4].map(c => vocab.filter(v => v.catDeEs === c).length);
+
+            document.getElementById("esde1").innerText = esdeCounts[0];
+            document.getElementById("esde2").innerText = esdeCounts[1];
+            document.getElementById("esde3").innerText = esdeCounts[2];
+            document.getElementById("esde4").innerText = esdeCounts[3];
+
+            document.getElementById("dees1").innerText = deesCounts[0];
+            document.getElementById("dees2").innerText = deesCounts[1];
+            document.getElementById("dees3").innerText = deesCounts[2];
+            document.getElementById("dees4").innerText = deesCounts[3];
+
+            if (total > 0) {
+                const avgEsDe = vocab.reduce((s, v) => s + v.catEsDe, 0) / total;
+                const avgDeEs = vocab.reduce((s, v) => s + v.catDeEs, 0) / total;
+
+                document.getElementById("avgEsDe").innerText = `Ø ${avgEsDe.toFixed(2).replace('.', ',')}`;
+                document.getElementById("avgDeEs").innerText = `Ø ${avgDeEs.toFixed(2).replace('.', ',')}`;
+
+                const summaryEl = document.getElementById("compareSummary");
+                const diff = Math.abs(avgEsDe - avgDeEs);
+                if (diff < 0.05) {
+                    summaryEl.innerText = "Vergleich: Beide Richtungen sind aktuell gleichauf.";
+                } else if (avgEsDe > avgDeEs) {
+                    summaryEl.innerText = `Vergleich: Spanisch → Deutsch fällt dir aktuell leichter (Ø ${avgEsDe.toFixed(2).replace('.', ',')} vs. ${avgDeEs.toFixed(2).replace('.', ',')}).`;
+                } else {
+                    summaryEl.innerText = `Vergleich: Deutsch → Spanisch fällt dir aktuell leichter (Ø ${avgDeEs.toFixed(2).replace('.', ',')} vs. ${avgEsDe.toFixed(2).replace('.', ',')}).`;
+                }
+            }
         }
 
         if ('serviceWorker' in navigator) {
